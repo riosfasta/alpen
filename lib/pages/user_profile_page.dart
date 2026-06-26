@@ -107,4 +107,39 @@ class _DocumentPreview extends StatelessWidget {
   }
   Widget _fileLabel(String name) => Row(children: [const Icon(Icons.picture_as_pdf, color: alpenBlue), const SizedBox(width: 10), Expanded(child: Text(name)), const Icon(Icons.visibility, color: alpenBlue)]);
 }
-Future<void> _logout(BuildContext context) => showDialog<void>(context: context, builder: (_) => AlertDialog(title: const Text('Apakah Anda yakin ingin keluar?', textAlign: TextAlign.center), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')), ElevatedButton(onPressed: () async { await SessionService.clear(); if (context.mounted) Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false); }, child: const Text('Log Out'))]));
+Future<void> _logout(BuildContext context) => showDialog<void>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: const CircleAvatar(
+          radius: 34,
+          backgroundColor: Color(0xFFFFDDDD),
+          child: Icon(Icons.question_mark, color: Colors.red, size: 38),
+        ),
+        title: const Text(
+          'Apakah Anda yakin Ingin Keluar dari akun ini?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Center(
+              child: Text('Cancel', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w700)),
+            ),
+          ),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () async {
+                await SessionService.clear();
+                if (context.mounted) {
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => const LoginPage()), (_) => false);
+                }
+              },
+              child: const Text('Log Out'),
+            ),
+          ),
+        ],
+      ),
+    );

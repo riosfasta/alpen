@@ -12,7 +12,7 @@ class AuthScaffold extends StatelessWidget {
     body: SafeArea(
       child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 46, 16, 28),
-        child: Column(children: [if (showBack) const Align(alignment: Alignment.centerLeft, child: CircleAvatar(radius: 15, backgroundColor: alpenBlue, child: BackButton(color: Colors.white))), child]),
+        child: Column(children: [if (showBack) Align(alignment: Alignment.centerLeft, child: SizedBox(width: 30, height: 30, child: DecoratedBox(decoration: const BoxDecoration(color: alpenBlue, shape: BoxShape.circle), child: IconButton(padding: EdgeInsets.zero, constraints: const BoxConstraints.tightFor(width: 30, height: 30), icon: const Icon(Icons.arrow_back, color: Colors.white, size: 20), onPressed: () => Navigator.maybePop(context))))), child]),
       ),
     ),
   );
@@ -144,12 +144,12 @@ class _OtpCodeInputState extends State<OtpCodeInput> {
   );
 }
 
-Future<void> successDialog(BuildContext context, String title, String body, {String actionLabel = 'OK'}) => showDialog<void>(
+Future<void> successDialog(BuildContext context, String title, String body, {String actionLabel = 'OK', VoidCallback? onAction}) => showDialog<void>(
   context: context,
   barrierDismissible: false,
   builder: (_) => AlertDialog(
     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    icon: const CircleAvatar(radius: 34, backgroundColor: Color(0xFFE1E8F5), child: Icon(Icons.check_rounded, color: alpenBlue, size: 38)),
+    icon: const CircleAvatar(radius: 34, backgroundColor: alpenBlue, child: Icon(Icons.check_rounded, color: Colors.white, size: 38)),
     title: Text(title, textAlign: TextAlign.center, style: const TextStyle(fontWeight: FontWeight.w800)),
     content: Text(body, textAlign: TextAlign.center),
     actions: [
@@ -158,7 +158,7 @@ Future<void> successDialog(BuildContext context, String title, String body, {Str
         child: SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: onAction ?? () => Navigator.pop(context),
             style: ElevatedButton.styleFrom(backgroundColor: alpenBlue, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14))),
             child: Text(actionLabel),
           ),

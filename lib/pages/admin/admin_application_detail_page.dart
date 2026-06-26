@@ -2,9 +2,185 @@ import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart' hide Center, Size, State;
 
 import '../../core/app_theme.dart';
+import '../../core/report_number.dart';
 import '../../services/mongo_service.dart';
 import '../../widgets/app_widgets.dart';
+import '../../widgets/document_preview.dart';
 
-class AdminApplicationDetailPage extends StatefulWidget { const AdminApplicationDetailPage({super.key, required this.report}); final Map<String, dynamic> report; @override State<AdminApplicationDetailPage> createState() => _AdminApplicationDetailPageState(); }
-class _AdminApplicationDetailPageState extends State<AdminApplicationDetailPage> { bool waiting = false; Future<void> _changeStatus(String status, [String? reason]) async { setState(() => waiting = true); try { await MongoService.instance.updateDeathReport(widget.report['_id'] as ObjectId, status: status, rejectionReason: reason); if (mounted) { Navigator.pop(context); Navigator.pop(context); } } finally { if (mounted) setState(() => waiting = false); } } Future<void> _approve() async { final ok = await showDialog<bool>(context: context, builder: (_) => AlertDialog(content: const Text('Apakah Anda yakin ingin menyetujui pengajuan ini?', textAlign: TextAlign.center), actions: [OutlinedButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')), ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Setujui'))])); if (ok == true) await _changeStatus('Disetujui'); } Future<void> _reject() async { final controller = TextEditingController(); final reason = await showDialog<String>(context: context, builder: (_) => AlertDialog(title: const Text('Tolak Pengajuan'), content: TextField(controller: controller, maxLines: 3, decoration: const InputDecoration(labelText: 'Alasan Penolakan')), actions: [OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')), ElevatedButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Tolak'))])); if (reason != null && reason.trim().isNotEmpty) await _changeStatus('Ditolak', reason.trim()); } @override Widget build(BuildContext context) => FormScaffold(title: 'Detail Pengajuan', subtitle: '', child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Status: ${widget.report['status'] ?? 'Pengajuan Baru'}', style: const TextStyle(color: Colors.deepOrange, fontWeight: FontWeight.w700)), const SizedBox(height: 16), _Card('Informasi Pelapor', [['Nama Lengkap', '${widget.report['reporterName'] ?? '-'}'], ['Jenis Kelamin', '${widget.report['reporterGender'] ?? '-'}'], ['No Handphone', '${widget.report['phone'] ?? '-'}']]), _Card('Informasi Almarhum', [['Nama Almarhum', '${widget.report['deceasedName'] ?? '-'}'], ['NIP/NIK', '${widget.report['identityNumber'] ?? '-'}'], ['Hubungan Keluarga', '${widget.report['relation'] ?? '-'}'], ['Tanggal Meninggal', '${widget.report['deathDate'] ?? '-'}']]), const SizedBox(height: 20), Row(children: [Expanded(child: OutlinedButton(onPressed: waiting ? null : _reject, style: OutlinedButton.styleFrom(foregroundColor: Colors.red, side: const BorderSide(color: Colors.red)), child: const Text('Tolak'))), const SizedBox(width: 10), Expanded(child: ElevatedButton(onPressed: waiting ? null : _approve, child: waiting ? const CircularProgressIndicator() : const Text('Setujui')))])])); }
-class _Card extends StatelessWidget { const _Card(this.title, this.rows); final String title; final List<List<String>> rows; @override Widget build(BuildContext context) => Container(width: double.infinity, margin: const EdgeInsets.only(bottom: 14), padding: const EdgeInsets.all(12), decoration: BoxDecoration(border: Border.all(color: const Color(0xFFD0D5DD)), borderRadius: BorderRadius.circular(10)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(color: alpenGreen, fontWeight: FontWeight.w700)), const SizedBox(height: 8), ...rows.map((row) => Padding(padding: const EdgeInsets.symmetric(vertical: 3), child: Row(children: [Expanded(child: Text(row[0], style: const TextStyle(color: Colors.grey))), Text(row[1])])))])); }
+class AdminApplicationDetailPage extends StatefulWidget {
+  const AdminApplicationDetailPage({super.key, required this.report});
+
+  final Map<String, dynamic> report;
+
+  @override
+  State<AdminApplicationDetailPage> createState() => _AdminApplicationDetailPageState();
+}
+
+class _AdminApplicationDetailPageState extends State<AdminApplicationDetailPage> {
+  bool waiting = false;
+
+  Future<void> _changeStatus(String status, [String? reason]) async {
+    setState(() => waiting = true);
+    try {
+      await MongoService.instance.updateDeathReport(
+        widget.report['_id'] as ObjectId,
+        status: status,
+        rejectionReason: reason,
+      );
+      if (mounted) {
+        Navigator.pop(context);
+        Navigator.pop(context);
+      }
+    } finally {
+      if (mounted) setState(() => waiting = false);
+    }
+  }
+
+  Future<void> _approve() async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        content: const Text('Apakah Anda yakin ingin menyetujui pengajuan ini?', textAlign: TextAlign.center),
+        actions: [
+          OutlinedButton(onPressed: () => Navigator.pop(context, false), child: const Text('Batal')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, true), child: const Text('Setujui')),
+        ],
+      ),
+    );
+    if (ok == true) await _changeStatus('Disetujui');
+  }
+
+  Future<void> _reject() async {
+    final controller = TextEditingController();
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Tolak Pengajuan'),
+        content: TextField(
+          controller: controller,
+          maxLines: 3,
+          decoration: const InputDecoration(labelText: 'Alasan Penolakan'),
+        ),
+        actions: [
+          OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text('Batal')),
+          ElevatedButton(onPressed: () => Navigator.pop(context, controller.text), child: const Text('Tolak')),
+        ],
+      ),
+    );
+    if (reason != null && reason.trim().isNotEmpty) await _changeStatus('Ditolak', reason.trim());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final status = widget.report['status']?.toString() ?? 'Pengajuan Baru';
+    return FormScaffold(
+      title: 'Detail Pengajuan',
+      subtitle: '',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  'Status: $status',
+                  style: TextStyle(
+                    color: status == 'Disetujui' ? alpenGreen : status == 'Ditolak' ? Colors.red : Colors.deepOrange,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Flexible(
+                child: Text(
+                  reportNumberOf(widget.report),
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(color: alpenBlue, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _Card('Informasi Pelapor', [
+            ['Nama Lengkap', '${widget.report['reporterName'] ?? '-'}'],
+            ['Jenis Kelamin', '${widget.report['reporterGender'] ?? '-'}'],
+            ['No Handphone', '${widget.report['phone'] ?? '-'}'],
+            ['Tanggal Lahir', '${widget.report['reporterBirth'] ?? '-'}'],
+          ]),
+          _Card('Informasi Almarhum', [
+            ['Nama Almarhum', '${widget.report['deceasedName'] ?? '-'}'],
+            ['NIP/NIK', '${widget.report['identityNumber'] ?? '-'}'],
+            ['Hubungan Keluarga', '${widget.report['relation'] ?? '-'}'],
+            ['Tanggal Meninggal', '${widget.report['deathDate'] ?? '-'}'],
+            ['Tanggal Lahir', '${widget.report['deceasedBirth'] ?? '-'}'],
+          ]),
+          UploadedDocumentPreview(
+            label: 'Preview Surat Keterangan Kematian',
+            metadata: widget.report['certificate'],
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: waiting ? null : _reject,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                  ),
+                  child: const Text('Tolak'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: ElevatedButton(
+                  onPressed: waiting ? null : _approve,
+                  child: waiting ? const CircularProgressIndicator() : const Text('Setujui'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Card extends StatelessWidget {
+  const _Card(this.title, this.rows);
+
+  final String title;
+  final List<List<String>> rows;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          border: Border.all(color: const Color(0xFFD0D5DD)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: const TextStyle(color: alpenGreen, fontWeight: FontWeight.w700)),
+            const SizedBox(height: 8),
+            ...rows.map(
+              (row) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 3),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(row[0], style: const TextStyle(color: Colors.grey))),
+                    const SizedBox(width: 12),
+                    Flexible(child: Text(row[1], textAlign: TextAlign.right)),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+}

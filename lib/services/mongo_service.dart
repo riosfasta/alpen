@@ -114,12 +114,39 @@ class MongoService {
       );
 
   Future<void> submitDeathReport(Map<String, dynamic> values) => _withDb((db) async {
+    final now = DateTime.now().toUtc();
+    final year = now.year;
+    final sequence = await _nextDeathReportSequence(db, year);
+    final letterNumber = 'ALP/${sequence.toString().padLeft(5, "0")}/$year';
+
     await db.collection('death_reports').insertOne({
       ...values,
+      'letterNumber': letterNumber,
+      'letterSequence': sequence,
+      'letterYear': year,
       'status': 'Pengajuan Baru',
-      'createdAt': DateTime.now().toUtc(),
+      'createdAt': now,
     });
   });
+
+  Future<int> _nextDeathReportSequence(Db db, int year) async {
+    final counter = await db.collection('report_counters').findAndModify(
+      query: {'_id': 'death_reports_$year'},
+      update: {
+        r'$inc': {'sequence': 1},
+        r'$setOnInsert': {
+          'year': year,
+          'createdAt': DateTime.now().toUtc(),
+        },
+      },
+      returnNew: true,
+      upsert: true,
+    );
+    final sequence = counter?['sequence'];
+    if (sequence is int) return sequence;
+    if (sequence is num) return sequence.toInt();
+    throw StateError('Nomor surat gagal dibuat. Silakan coba lagi.');
+  }
 
   Future<List<Map<String, dynamic>>> findDeathReports(ObjectId userId) => _withDb(
         (db) => db
@@ -143,7 +170,39 @@ class MongoService {
     await db.collection('death_reports').updateOne(where.id(id), update);
   });
 
+  Future<void> updateDeathReportData(ObjectId id, Map<String, dynamic> values) => _withDb((db) async {
+    final result = await db.collection('death_reports').updateOne(
+          {'_id': id},
+          modify
+              .set('reporterName', values['reporterName'])
+              .set('reporterBirth', values['reporterBirth'])
+              .set('reporterGender', values['reporterGender'])
+              .set('phone', values['phone'])
+              .set('deceasedName', values['deceasedName'])
+              .set('deceasedBirth', values['deceasedBirth'])
+              .set('identityNumber', values['identityNumber'])
+              .set('relation', values['relation'])
+              .set('deathDate', values['deathDate'])
+              .set('status', values['status'])
+              .set('updatedAt', DateTime.now().toUtc()),
+        );
+    if (!result.operationSucceeded || result.nMatched < 1) {
+      throw StateError('Data pengajuan tidak ditemukan atau gagal diperbarui.');
+    }
+  });
+
+  Future<void> deleteDeathReport(ObjectId id) => _withDb((db) async {
+    final result = await db.collection('death_reports').deleteOne({'_id': id});
+    if (!result.operationSucceeded || result.nRemoved < 1) {
+      throw StateError('Data pengajuan tidak ditemukan atau gagal dihapus.');
+    }
+  });
+
   Future<void> publishAnnouncement(Map<String, dynamic> values) => _withDb((db) => db.collection('announcements').insertOne({...values, 'status': 'Aktif', 'createdAt': DateTime.now().toUtc()}));
+
+  Future<void> updateAnnouncement(ObjectId id, Map<String, dynamic> values) => _withDb((db) => db.collection('announcements').updateOne(where.id(id), modify.set('title', values['title']).set('publishDate', values['publishDate']).set('endDate', values['endDate']).set('thumbnail', values['thumbnail']).set('body', values['body']).set('updatedAt', DateTime.now().toUtc())));
+
+  Future<void> deleteAnnouncement(ObjectId id) => _withDb((db) => db.collection('announcements').deleteOne(where.id(id)));
 
   Future<List<Map<String, dynamic>>> findAnnouncements() => _withDb(
         (db) => db

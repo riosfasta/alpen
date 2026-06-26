@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:mongo_dart/mongo_dart.dart' hide Center, Size, State;
 
 import '../core/app_theme.dart';
+import '../core/report_number.dart';
 import '../services/mongo_service.dart';
 import 'report_detail_page.dart';
 
@@ -21,7 +22,9 @@ class _StatusReportPageState extends State<StatusReportPage> {
   }
 
   Future<void> refresh() async {
-    setState(() => reports = MongoService.instance.findDeathReports(widget.user['_id'] as ObjectId));
+    final nextReports = MongoService.instance.findDeathReports(widget.user['_id'] as ObjectId);
+    setState(() => reports = nextReports);
+    await nextReports;
   }
 
   @override
@@ -65,7 +68,7 @@ class _ReportCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(border: Border.all(color: const Color(0xFFD0D5DD)), borderRadius: BorderRadius.circular(12)),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Chip(label: Text('#${report['_id']?.toString().substring(0, 8) ?? '-'}')), Text(status, style: TextStyle(color: color, fontWeight: FontWeight.w700))]),
+          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Chip(label: Text(reportNumberOf(report))), Text(status, style: TextStyle(color: color, fontWeight: FontWeight.w700))]),
           const SizedBox(height: 8),
           Text('${report['deceasedName'] ?? 'Almarhum'}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
           Text('Pelapor: ${report['reporterName'] ?? '-'}'),
