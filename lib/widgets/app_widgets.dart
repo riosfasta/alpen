@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../core/app_theme.dart';
-import 'alpen_mark.dart';
-
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({super.key, required this.child, this.showBack = false});
   final Widget child;
@@ -29,8 +27,6 @@ class FormScaffold extends StatelessWidget {
     body: SafeArea(child: SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Center(child: AlpenMark()),
-        const SizedBox(height: 24),
         Text(title, style: const TextStyle(color: alpenGreen, fontSize: 24, fontWeight: FontWeight.w800)),
         const SizedBox(height: 8),
         Text(subtitle, style: const TextStyle(color: Color(0xFF667085), height: 1.45)),
