@@ -15,7 +15,7 @@ dependencies:
   file_picker: ^10.3.10
   http: ^1.6.0
   shared_preferences: ^2.5.4
-
+  face_camera: ^0.1.4
 dev_dependencies:
   flutter_test:
     sdk: flutter

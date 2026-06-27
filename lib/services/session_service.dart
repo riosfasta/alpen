@@ -29,4 +29,5 @@ class SessionService {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_emailKey);
   }
+
 }

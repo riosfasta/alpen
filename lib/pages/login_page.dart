@@ -28,13 +28,17 @@ class _LoginPageState extends State<LoginPage> {
       final user = await MongoService.instance.login(identity.text, password.text);
       if (!mounted) return;
       if (user == null) return showMessage(context, 'Email/username atau kata sandi tidak sesuai.');
-      await SessionService.saveUser(user);
-      if (!mounted) return;
-      final page = user['role'] == 'admin'
-          ? AdminHomePage(user: user)
-          : user['profileCompleted'] == true
-              ? UserHomePage(user: user)
-              : PersonalDataPage(user: user);
+      Widget page;
+      if (user['role'] == 'admin') {
+        await SessionService.saveUser(user);
+        page = AdminHomePage(user: user);
+      } else if (user['profileCompleted'] != true) {
+        await SessionService.saveUser(user);
+        page = PersonalDataPage(user: user);
+      } else {
+        await SessionService.saveUser(user);
+        page = UserHomePage(user: user);
+      }
       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (_) => page), (_) => false);
     } catch (error) { if (mounted) showMessage(context, friendlyError(error)); }
     finally { if (mounted) setState(() => waiting = false); }

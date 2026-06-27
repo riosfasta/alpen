@@ -5,6 +5,7 @@ import '../core/navigation.dart';
 import '../services/session_service.dart';
 import '../widgets/alpen_mark.dart';
 import 'death_report_page.dart';
+import 'face_authentication_page.dart';
 import 'login_page.dart';
 import 'news_page.dart';
 import 'notification_page.dart';
@@ -23,18 +24,26 @@ class UserHomePage extends StatefulWidget {
 class _UserHomePageState extends State<UserHomePage> {
   int tab = 0;
   int statusRefreshToken = 0;
+  bool authenticatedInCurrentSession = false;
   late final List<Widget> pages;
 
   @override
   void initState() {
     super.initState();
     pages = [
-      _HomeTab(name: widget.user['name'] ?? 'Pengguna', user: widget.user, openReport: _openDeathReport),
+      _homeTab(),
       _ApplicationTab(openReport: _openDeathReport),
       StatusReportPage(key: ValueKey('status-$statusRefreshToken'), user: widget.user),
       UserProfilePage(user: widget.user),
     ];
   }
+
+  Widget _homeTab() => _HomeTab(
+        name: widget.user['name'] ?? 'Pengguna',
+        authenticated: authenticatedInCurrentSession,
+        openReport: _openDeathReport,
+        openAuthentication: _openAuthentication,
+      );
 
   Future<void> _openDeathReport() async {
     final result = await Navigator.push<String>(
@@ -46,6 +55,23 @@ class _UserHomePageState extends State<UserHomePage> {
         statusRefreshToken++;
         pages[2] = StatusReportPage(key: ValueKey('status-$statusRefreshToken'), user: widget.user);
         tab = 2;
+      });
+    }
+  }
+
+  Future<void> _openAuthentication() async {
+    final result = await Navigator.push<Map<String, dynamic>>(
+      context,
+      MaterialPageRoute(builder: (_) => FaceAuthenticationPage(user: widget.user)),
+    );
+    if (result != null && mounted) {
+      setState(() {
+        authenticatedInCurrentSession = true;
+        widget.user
+          ..clear()
+          ..addAll(result);
+        pages[0] = _homeTab();
+        pages[3] = UserProfilePage(user: widget.user);
       });
     }
   }
@@ -68,11 +94,17 @@ class _UserHomePageState extends State<UserHomePage> {
 }
 
 class _HomeTab extends StatelessWidget {
-  const _HomeTab({required this.name, required this.user, required this.openReport});
+  const _HomeTab({
+    required this.name,
+    required this.authenticated,
+    required this.openReport,
+    required this.openAuthentication,
+  });
 
   final String name;
-  final Map<String, dynamic> user;
+  final bool authenticated;
   final VoidCallback openReport;
+  final VoidCallback openAuthentication;
 
   @override
   Widget build(BuildContext context) => SingleChildScrollView(
@@ -95,7 +127,27 @@ class _HomeTab extends StatelessWidget {
             const SizedBox(height: 18),
             const Text('Layanan Kami', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: alpenGreen)),
             const SizedBox(height: 12),
-            GestureDetector(onTap: openReport, child: _serviceCard()),
+            Row(
+              children: [
+                Expanded(
+                  child: _ServiceTile(
+                    label: 'Pelaporan Kematian',
+                    icon: Icons.assignment_rounded,
+                    color: alpenBlue,
+                    onTap: openReport,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _ServiceTile(
+                    label: authenticated ? 'Sudah Autentikasi' : 'Autentikasi',
+                    icon: authenticated ? Icons.verified_user_rounded : Icons.account_circle_rounded,
+                    color: alpenGreen,
+                    onTap: openAuthentication,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: 18),
             const Text('Informasi & Pengumuman', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: alpenGreen)),
             const SizedBox(height: 12),
@@ -115,27 +167,46 @@ class _HomeTab extends StatelessWidget {
       );
 }
 
-Widget _serviceCard() => Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(color: alpenSoftBlue, borderRadius: BorderRadius.circular(18)),
-      child: const Row(
-        children: [
-          CircleAvatar(radius: 25, backgroundColor: Colors.white, child: Icon(Icons.assignment_rounded, color: alpenBlue)),
-          SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Pelaporan Kematian', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
-                SizedBox(height: 3),
-                Text('Ajukan laporan secara mudah dan aman', style: TextStyle(fontSize: 12, color: Color(0xFF667085))),
-              ],
-            ),
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({
+    required this.label,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  final String label;
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Container(
+          height: 124,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(8)),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: Colors.white.withValues(alpha: 0.22),
+                child: Icon(icon, color: Colors.white, size: 26),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w600),
+              ),
+            ],
           ),
-          Icon(Icons.arrow_forward_ios_rounded, color: alpenBlue, size: 18),
-        ],
-      ),
-    );
+        ),
+      );
+}
 
 Widget _newsCard(String title) => Container(
       margin: const EdgeInsets.only(bottom: 12),

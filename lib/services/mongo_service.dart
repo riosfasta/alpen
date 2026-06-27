@@ -113,6 +113,48 @@ class MongoService {
             ),
       );
 
+  Future<Map<String, dynamic>?> findUserById(ObjectId id) => _withDb(
+        (db) => db.collection('users').findOne(where.id(id)),
+      );
+
+  Future<void> saveFaceAuthentication({
+    required ObjectId id,
+    required Map<String, dynamic> identityData,
+    required Map<String, dynamic> referenceImage,
+  }) =>
+      _withDb(
+        (db) => db.collection('users').updateOne(
+              where.id(id),
+              modify
+                  .set('faceAuth', {
+                    'enabled': true,
+                    'identityData': identityData,
+                    'referenceImage': referenceImage,
+                    'createdAt': DateTime.now().toUtc(),
+                    'lastVerifiedAt': DateTime.now().toUtc(),
+                  })
+                  .set('faceAuthenticated', true)
+                  .set('faceAuthenticatedAt', DateTime.now().toUtc()),
+            ),
+      );
+
+  Future<void> recordFaceVerification({
+    required ObjectId id,
+    required Map<String, dynamic> identityData,
+    required Map<String, dynamic> verificationImage,
+  }) =>
+      _withDb(
+        (db) => db.collection('users').updateOne(
+              where.id(id),
+              modify
+                  .set('faceAuth.lastIdentityData', identityData)
+                  .set('faceAuth.lastVerificationImage', verificationImage)
+                  .set('faceAuth.lastVerifiedAt', DateTime.now().toUtc())
+                  .set('faceAuthenticated', true)
+                  .set('faceAuthenticatedAt', DateTime.now().toUtc()),
+            ),
+      );
+
   Future<void> submitDeathReport(Map<String, dynamic> values) => _withDb((db) async {
     final now = DateTime.now().toUtc();
     final year = now.year;
