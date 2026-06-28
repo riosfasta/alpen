@@ -43,3 +43,7 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    implementation("com.google.mlkit:common:18.11.0")
+}
