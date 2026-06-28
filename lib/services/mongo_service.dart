@@ -121,38 +121,57 @@ class MongoService {
     required ObjectId id,
     required Map<String, dynamic> identityData,
     required Map<String, dynamic> referenceImage,
+    List<double>? referenceEmbedding,
   }) =>
       _withDb(
-        (db) => db.collection('users').updateOne(
-              where.id(id),
-              modify
-                  .set('faceAuth', {
-                    'enabled': true,
-                    'identityData': identityData,
-                    'referenceImage': referenceImage,
-                    'createdAt': DateTime.now().toUtc(),
-                    'lastVerifiedAt': DateTime.now().toUtc(),
-                  })
-                  .set('faceAuthenticated', true)
-                  .set('faceAuthenticatedAt', DateTime.now().toUtc()),
-            ),
+        (db) {
+          final faceAuth = {
+            'enabled': true,
+            'identityData': identityData,
+            'referenceImage': referenceImage,
+            if (referenceEmbedding != null) 'referenceEmbedding': referenceEmbedding,
+            'createdAt': DateTime.now().toUtc(),
+            'lastVerifiedAt': DateTime.now().toUtc(),
+          };
+
+          return db.collection('users').updateOne(
+                where.id(id),
+                modify
+                    .set('faceAuth', faceAuth)
+                    .set('faceAuthenticated', true)
+                    .set('faceAuthenticatedAt', DateTime.now().toUtc()),
+              );
+        },
       );
 
   Future<void> recordFaceVerification({
     required ObjectId id,
     required Map<String, dynamic> identityData,
     required Map<String, dynamic> verificationImage,
+    List<double>? verificationEmbedding,
+    double? matchDistance,
+    double? matchThreshold,
   }) =>
       _withDb(
-        (db) => db.collection('users').updateOne(
-              where.id(id),
-              modify
-                  .set('faceAuth.lastIdentityData', identityData)
-                  .set('faceAuth.lastVerificationImage', verificationImage)
-                  .set('faceAuth.lastVerifiedAt', DateTime.now().toUtc())
-                  .set('faceAuthenticated', true)
-                  .set('faceAuthenticatedAt', DateTime.now().toUtc()),
-            ),
+        (db) {
+          final update = modify
+              .set('faceAuth.lastIdentityData', identityData)
+              .set('faceAuth.lastVerificationImage', verificationImage)
+              .set('faceAuth.lastVerifiedAt', DateTime.now().toUtc())
+              .set('faceAuthenticated', true)
+              .set('faceAuthenticatedAt', DateTime.now().toUtc());
+          if (verificationEmbedding != null) {
+            update.set('faceAuth.lastVerificationEmbedding', verificationEmbedding);
+          }
+          if (matchDistance != null) {
+            update.set('faceAuth.lastMatchDistance', matchDistance);
+          }
+          if (matchThreshold != null) {
+            update.set('faceAuth.matchThreshold', matchThreshold);
+          }
+
+          return db.collection('users').updateOne(where.id(id), update);
+        },
       );
 
   Future<void> submitDeathReport(Map<String, dynamic> values) => _withDb((db) async {
