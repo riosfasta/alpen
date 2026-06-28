@@ -32,10 +32,10 @@ subprojects {
             targetCompatibility = JavaVersion.VERSION_17
         }
         if (project.name == "camera_android_camerax") {
-            dependencies.add("implementation", "androidx.camera:camera-core:1.5.3")
-            dependencies.add("implementation", "androidx.camera:camera-camera2:1.5.3")
-            dependencies.add("implementation", "androidx.camera:camera-lifecycle:1.5.3")
-            dependencies.add("implementation", "androidx.camera:camera-video:1.5.3")
+            dependencies.add("implementation", "androidx.camera:camera-core:1.4.1")
+            dependencies.add("implementation", "androidx.camera:camera-camera2:1.4.1")
+            dependencies.add("implementation", "androidx.camera:camera-lifecycle:1.4.1")
+            dependencies.add("implementation", "androidx.camera:camera-video:1.4.1")
         }
         if (project.name == "google_mlkit_commons") {
             dependencies.add("implementation", "com.google.mlkit:common:18.11.0")
