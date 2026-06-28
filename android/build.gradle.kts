@@ -31,6 +31,16 @@ subprojects {
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
         }
+        if (project.name == "camera_android_camerax") {
+            dependencies.add("implementation", "androidx.camera:camera-core:1.5.3")
+            dependencies.add("implementation", "androidx.camera:camera-camera2:1.5.3")
+            dependencies.add("implementation", "androidx.camera:camera-lifecycle:1.5.3")
+            dependencies.add("implementation", "androidx.camera:camera-video:1.5.3")
+        }
+        if (project.name == "google_mlkit_commons") {
+            dependencies.add("implementation", "com.google.mlkit:common:18.11.0")
+            dependencies.add("implementation", "com.google.android.gms:play-services-tasks:18.4.0")
+        }
     }
     tasks.withType<JavaCompile>().configureEach {
         sourceCompatibility = JavaVersion.VERSION_17.toString()
